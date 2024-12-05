@@ -1,0 +1,253 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL_ADMIN")
+}
+
+model User {
+    userId          BigInt        @id @default(autoincrement())
+    idRole          BigInt
+    name            String        @db.VarChar(40)
+    email           String        @unique @db.VarChar(40)
+    username        String        @unique @db.VarChar(40)
+    emailVerifiedAt DateTime?
+    image           String?       @db.VarChar(255)
+    access          String?       @db.Text
+    password        String        @db.VarChar(255)
+    lastLogin       DateTime?
+    createdAt       DateTime?     @default(now())
+    updatedAt       DateTime?     @updatedAt
+    bitacoras       Bitacora[]
+    transactions    Transaction[]
+    emailLogs       EmailLog[]
+}
+
+model UserNotification {
+    id             BigInt    @id @default(autoincrement())
+    userId         BigInt?
+    userSiteSiteId Int       @default(0)
+    title          String?   @db.VarChar(255)
+    readStatus     Boolean   @default(false)
+    clickUrl       String?   @db.Text
+    createdAt      DateTime? @default(now())
+    updatedAt      DateTime? @updatedAt
+}
+
+model UserPasswordReset {
+    id        BigInt    @id @default(autoincrement())
+    userId    BigInt?
+    email     String    @db.VarChar(40)
+    token     String    @db.VarChar(40)
+    status    Boolean   @default(true)
+    createdAt DateTime? @default(now())
+    updatedAt DateTime? @updatedAt
+}
+
+model Bitacora {
+    bitacoraId  Int      @id @default(autoincrement())
+    userId      Int
+    event       String   @db.VarChar(190)
+    description String   @db.VarChar(255)
+    createdAt   DateTime @default(now())
+    users       User[]
+}
+
+model Deposit {
+    id             BigInt       @id @default(autoincrement())
+    transactionId  BigInt?
+    userSiteId     Int
+    methodCode     Int
+    amount         Decimal      @default(0) @db.Decimal(28, 8)
+    methodCurrency String       @db.VarChar(40)
+    charge         Decimal      @default(0) @db.Decimal(28, 8)
+    rate           Decimal      @default(0) @db.Decimal(28, 8)
+    finalAmo       Decimal      @default(0) @db.Decimal(28, 8)
+    detail         String?      @db.Text
+    btcAmo         String?      @db.VarChar(255)
+    btcWallet      String?      @db.VarChar(255)
+    trx            String?      @db.VarChar(40)
+    try            Int          @default(0)
+    status         Boolean      @default(false)
+    userAuthor     String       @db.VarChar(190)
+    fromApi        Boolean      @default(false)
+    userFeedback   String?      @db.VarChar(255)
+    createdAt      DateTime?    @default(now())
+    updatedAt      DateTime?    @updatedAt
+    Transaction    Transaction? @relation(fields: [transactionId], references: [transactionId])
+}
+
+model EmailLog {
+    id         BigInt    @id @default(autoincrement())
+    userId     BigInt?
+    userSiteId Int
+    mailSender String?   @db.VarChar(40)
+    emailFrom  String?   @db.VarChar(40)
+    emailTo    String?   @db.VarChar(40)
+    subject    String?   @db.VarChar(255)
+    message    String?   @db.Text
+    createdAt  DateTime? @default(now())
+    updatedAt  DateTime? @updatedAt
+    User       User?     @relation(fields: [userId], references: [userId])
+}
+
+model Gateway {
+    gatewayId           Int               @id @default(autoincrement())
+    code                Int?
+    name                String            @db.VarChar(60)
+    alias               String            @db.VarChar(60)
+    image               String?           @db.VarChar(191)
+    status              Boolean           @default(true)
+    gatewayParameters   String?           @db.Text
+    supportedCurrencies String?           @db.Text
+    crypto              Boolean           @default(false)
+    extra               String?           @db.Text
+    description         String?           @db.Text
+    inputForm           String?           @db.Text
+    createdAt           DateTime?         @default(now())
+    updatedAt           DateTime?         @updatedAt
+    gatewayCurrencies   GatewayCurrency[]
+    withdrawMethods     WithdrawMethod[]
+}
+
+model GatewayCurrency {
+    id               Int       @id @default(autoincrement())
+    gatewayId        Int
+    name             String?   @db.VarChar(60)
+    currency         String?   @db.VarChar(10)
+    symbol           String?   @db.VarChar(3)
+    methodCode       Int?
+    gatewayAlias     String?   @db.VarChar(25)
+    minAmount        Decimal   @default(0) @db.Decimal(28, 8)
+    maxAmount        Decimal   @default(0) @db.Decimal(28, 8)
+    percentCharge    Decimal   @default(0) @db.Decimal(5, 2)
+    fixedCharge      Decimal   @default(0) @db.Decimal(28, 8)
+    rate             Decimal   @default(0) @db.Decimal(28, 8)
+    image            String?   @db.VarChar(191)
+    gatewayParameter String?   @db.Text
+    createdAt        DateTime? @default(now())
+    updatedAt        DateTime? @updatedAt
+    Gateway          Gateway   @relation(fields: [gatewayId], references: [gatewayId])
+}
+
+model Role {
+    roleId      BigInt       @id @default(autoincrement())
+    name        String       @db.VarChar(255)
+    guardName   String       @db.VarChar(255)
+    createdAt   DateTime?    @default(now())
+    updatedAt   DateTime?    @updatedAt
+    permissions Permission[]
+}
+
+model Permission {
+    id           BigInt    @id @default(autoincrement())
+    permissionId BigInt?
+    name         String    @db.VarChar(255)
+    guardName    String    @db.VarChar(255)
+    createdAt    DateTime? @default(now())
+    updatedAt    DateTime? @updatedAt
+    roles        Role[]
+}
+
+model SupportAttachment {
+    id               BigInt    @id @default(autoincrement())
+    supportMessageId Int
+    attachment       String    @db.VarChar(255)
+    createdAt        DateTime? @default(now())
+    updatedAt        DateTime? @updatedAt
+}
+
+model SupportMessage {
+    id              Int       @id @default(autoincrement())
+    supportTicketId Int       @default(0)
+    userId          Int       @default(0)
+    message         String    @db.Text
+    createdAt       DateTime? @default(now())
+    updatedAt       DateTime? @updatedAt
+}
+
+model SupportTicket {
+    id         BigInt    @id @default(autoincrement())
+    userSiteId Int       @default(0)
+    name       String?   @db.VarChar(191)
+    email      String?   @db.VarChar(91)
+    ticket     String?   @db.VarChar(191)
+    subject    String?   @db.VarChar(191)
+    status     Int       @db.SmallInt
+    priority   Int       @default(0)
+    lastReply  DateTime?
+    createdAt  DateTime? @default(now())
+    updatedAt  DateTime? @updatedAt
+}
+
+model Transaction {
+    transactionId BigInt       @id @default(autoincrement())
+    userId        Int?
+    userSiteId    Int?
+    amount        Decimal      @default(0) @db.Decimal(28, 8)
+    charge        Decimal      @default(0) @db.Decimal(28, 8)
+    postBalance   Decimal      @default(0) @db.Decimal(28, 8)
+    trxType       String?      @db.VarChar(10)
+    trx           String?      @db.VarChar(25)
+    details       String?      @db.VarChar(255)
+    createdAt     DateTime?    @default(now())
+    updatedAt     DateTime?    @updatedAt
+    users         User[]
+    deposits      Deposit[]
+    withdrawals   Withdrawal[]
+}
+
+model Winner {
+    id        BigInt    @id @default(autoincrement())
+    phaseId   Int
+    userId    Int
+    win       String    @db.VarChar(191)
+    amo       Decimal   @db.Decimal(18, 8)
+    createdAt DateTime? @default(now())
+    updatedAt DateTime? @updatedAt
+}
+
+model Withdrawal {
+    withdrawalId        Int              @id @default(autoincrement())
+    transactionId       BigInt?
+    userSiteId          Int
+    methodId            Int
+    amount              Decimal          @default(0) @db.Decimal(28, 8)
+    currency            String           @db.VarChar(40)
+    rate                Decimal          @default(0) @db.Decimal(28, 8)
+    charge              Decimal          @default(0) @db.Decimal(28, 8)
+    trx                 String           @db.VarChar(40)
+    finalAmount         Decimal          @default(0) @db.Decimal(28, 8)
+    afterCharge         Decimal          @default(0) @db.Decimal(28, 8)
+    withdrawInformation String?          @db.Text
+    status              Int              @default(0) @db.SmallInt
+    userFeedback        String?          @db.Text
+    createdAt           DateTime?        @default(now())
+    updatedAt           DateTime?        @updatedAt
+    Transaction         Transaction?     @relation(fields: [transactionId], references: [transactionId])
+    withdrawMethods     WithdrawMethod[]
+}
+
+model WithdrawMethod {
+    id            Int         @id @default(autoincrement())
+    withdrawalId  Int
+    gatewayId     Int
+    name          String?     @db.VarChar(191)
+    image         String?     @db.VarChar(191)
+    minLimit      Decimal     @default(0) @db.Decimal(28, 8)
+    maxLimit      Decimal     @default(0) @db.Decimal(28, 8)
+    delay         String?     @db.VarChar(191)
+    fixedCharge   Decimal     @default(0) @db.Decimal(28, 8)
+    rate          Decimal     @default(0) @db.Decimal(28, 8)
+    percentCharge Decimal     @db.Decimal(5, 2)
+    currency      String?     @db.VarChar(20)
+    userData      String?     @db.Text
+    description   String?     @db.Text
+    status        Boolean     @default(true)
+    createdAt     DateTime?   @default(now())
+    updatedAt     DateTime?   @updatedAt
+    Gateway       Gateway?    @relation(fields: [gatewayId], references: [gatewayId])
+    Withdrawal    Withdrawal? @relation(fields: [withdrawalId], references: [withdrawalId])
+}
